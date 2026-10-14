@@ -87,6 +87,7 @@ Duration changes apply from the next phase. A value that isn't one of the popup'
 | `omarchy-shell pomarchy stop` | Back to idle, keeping cycle progress |
 | `omarchy-shell pomarchy reset` | Back to idle, clearing the session count |
 | `omarchy-shell pomarchy adjust 5` | Add or remove minutes on the current phase |
+| `omarchy-shell pomarchy start 45` | Start a work session of 45 min (0 = your setting), skipping a pending break; prints `busy` while a phase runs |
 | `omarchy-shell pomarchy status` | Print the state as JSON |
 
 ```json
@@ -100,6 +101,7 @@ For example, in `~/.config/hypr/bindings.lua`:
 ```lua
 o.bind("SUPER + ALT + P", "Pomarchy toggle", "omarchy-shell pomarchy toggle")
 o.bind("SUPER + ALT + SHIFT + P", "Pomarchy skip", "omarchy-shell pomarchy skip")
+o.bind("SUPER + ALT + CTRL + P", "Pomarchy 50 min session", "omarchy-shell pomarchy start 50")
 ```
 
 ## Data
