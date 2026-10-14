@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "nambrosini.pomodoro",
+  "name": "Pomodoro",
+  "version": "0.2.0",
+  "author": "nambrosini",
+  "description": "Pomodoro timer in the bar with a player-style popup: work sessions and breaks that wait for your confirmation",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Pomodoro",
+    "description": "Pomodoro countdown; click to open the timer popup",
+    "category": "Time",
+    "allowMultiple": false,
+    "defaultSection": "center",
+    "defaults": {
+      "workMinutes": 25,
+      "shortBreakMinutes": 5,
+      "longBreakMinutes": 15,
+      "sessionsBeforeLongBreak": 4,
+      "notify": true,
+      "sound": "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
+    },
+    "schema": [
+      { "key": "workMinutes", "type": "integer", "label": "Work session (minutes)", "min": 1, "max": 180, "step": 1, "defaultValue": 25 },
+      { "key": "shortBreakMinutes", "type": "integer", "label": "Short break (minutes)", "min": 1, "max": 180, "step": 1, "defaultValue": 5 },
+      { "key": "longBreakMinutes", "type": "integer", "label": "Long break (minutes)", "min": 1, "max": 180, "step": 1, "defaultValue": 15 },
+      { "key": "sessionsBeforeLongBreak", "type": "integer", "label": "Work sessions before a long break", "min": 1, "max": 12, "step": 1, "defaultValue": 4 },
+      { "key": "notify", "type": "boolean", "label": "Ask with a notification when a phase ends", "defaultValue": true },
+      { "key": "sound", "type": "path", "label": "Phase-change sound (empty for none)", "defaultValue": "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga" }
+    ]
+  }
+}

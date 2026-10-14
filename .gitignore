@@ -1,0 +1,17 @@
+# Node (tests run with `node --test`; nothing is installed, but keep it so)
+node_modules/
+coverage/
+*.lcov
+
+# QML tooling caches
+*.qmlc
+*.jsc
+.qmlls.ini
+.qmlcache/
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
