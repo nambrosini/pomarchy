@@ -7,7 +7,7 @@ import { readFileSync, existsSync } from "node:fs"
 
 const service = readFileSync(new URL("../Service.qml", import.meta.url), "utf8")
 const readmeUrl = new URL("../README.md", import.meta.url)
-const COMMANDS = ["toggle", "confirm", "skip", "back", "stop", "reset", "adjust", "status"]
+const COMMANDS = ["toggle", "confirm", "skip", "back", "stop", "reset", "adjust", "start", "status"]
 
 function ipcBlock(source) {
   const start = source.indexOf("IpcHandler {")
@@ -27,6 +27,10 @@ describe("IPC", () => {
 
   test("adjust takes typed whole minutes", () => {
     assert.match(ipcBlock(service), /function adjust\(minutes:\s*int\):\s*string/)
+  })
+
+  test("start takes typed whole minutes and reports busy", () => {
+    assert.match(ipcBlock(service), /function start\(minutes:\s*int\):\s*string/)
   })
 
   test("README documents every command", () => {
