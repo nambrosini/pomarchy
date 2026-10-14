@@ -412,7 +412,7 @@ describe("widget presentation", () => {
   })
 
   test("tooltip while idle points at the popup, with no click hints", () => {
-    assert.equal(Model.tooltip(idle(), c, T0), "Pomodoro\nClick to open the timer · 25 min work sessions")
+    assert.equal(Model.tooltip(idle(), c, T0), "Pomarchy\nClick to open the timer · 25 min work sessions")
   })
 
   test("tooltip while running shows time left and progress", () => {
@@ -436,7 +436,7 @@ describe("phase-change alerts", () => {
 
   test("notification is a sticky, clickable prompt that reports its id", () => {
     assert.deepEqual(plain(Model.notifyCommand(awaitingShort(), c)), [
-      "notify-send", "--app-name=Pomodoro", "--urgency=critical", "--print-id",
+      "notify-send", "--app-name=Pomarchy", "--urgency=critical", "--print-id",
       "--action=default=Start short break", "Work session done", "Click to start a 5 min short break",
     ])
   })
@@ -490,13 +490,13 @@ describe("phase-change alerts", () => {
 
 describe("state file", () => {
   test("lives under XDG_STATE_HOME when it is set", () => {
-    assert.equal(Model.stateDir({ XDG_STATE_HOME: "/x/state", HOME: "/home/u" }), "/x/state/omarchy-pomodoro")
-    assert.equal(Model.stateDir({ XDG_STATE_HOME: "/x/state/", HOME: "/home/u" }), "/x/state/omarchy-pomodoro")
+    assert.equal(Model.stateDir({ XDG_STATE_HOME: "/x/state", HOME: "/home/u" }), "/x/state/pomarchy")
+    assert.equal(Model.stateDir({ XDG_STATE_HOME: "/x/state/", HOME: "/home/u" }), "/x/state/pomarchy")
   })
 
   test("falls back to ~/.local/state", () => {
-    assert.equal(Model.stateDir({ XDG_STATE_HOME: "", HOME: "/home/u" }), "/home/u/.local/state/omarchy-pomodoro")
-    assert.equal(Model.stateDir({ HOME: "/home/u" }), "/home/u/.local/state/omarchy-pomodoro")
+    assert.equal(Model.stateDir({ XDG_STATE_HOME: "", HOME: "/home/u" }), "/home/u/.local/state/pomarchy")
+    assert.equal(Model.stateDir({ HOME: "/home/u" }), "/home/u/.local/state/pomarchy")
   })
 
   test("the hot-reload copy wins over the file (it is never older)", () => {
@@ -1304,5 +1304,20 @@ describe("stat tiles", () => {
   test("no best day yet", () => {
     const tiles = Model.statTiles({ sessions: 0, focusHours: 0, currentStreak: 0, longestStreak: 0, bestDay: null })
     assert.deepEqual(plain(tiles[4]), { value: "–", label: "best day" })
+  })
+})
+
+describe("rename to Pomarchy", () => {
+  test("the old state folder is where the copy comes from", () => {
+    assert.equal(Model.legacyStateDir({ XDG_STATE_HOME: "/x/state/", HOME: "/home/u" }), "/x/state/omarchy-pomodoro")
+    assert.equal(Model.legacyStateDir({ HOME: "/home/u" }), "/home/u/.local/state/omarchy-pomodoro")
+  })
+
+  test("preparing the state folder copies old files over once, never overwriting", () => {
+    assert.deepEqual(plain(Model.prepareStateDirCommand("/s/pomarchy", "/s/omarchy-pomodoro")), [
+      "sh", "-c",
+      'mkdir -p "$1" && for f in state.json stats.json; do [ -e "$1/$f" ] || [ ! -e "$2/$f" ] || cp "$2/$f" "$1/$f"; done',
+      "sh", "/s/pomarchy", "/s/omarchy-pomodoro",
+    ])
   })
 })

@@ -15,8 +15,8 @@ function ipcBlock(source) {
 }
 
 describe("IPC", () => {
-  test("Service.qml registers the pomodoro target", () => {
-    assert.match(ipcBlock(service), /target:\s*"pomodoro"/)
+  test("Service.qml registers the pomarchy target", () => {
+    assert.match(ipcBlock(service), /target:\s*"pomarchy"/)
   })
 
   for (const name of COMMANDS) {
@@ -32,6 +32,6 @@ describe("IPC", () => {
   test("README documents every command", () => {
     assert.ok(existsSync(readmeUrl), "README.md missing")
     const readme = readFileSync(readmeUrl, "utf8")
-    for (const name of COMMANDS) assert.match(readme, new RegExp(`omarchy-shell pomodoro ${name}`), name)
+    for (const name of COMMANDS) assert.match(readme, new RegExp(`omarchy-shell pomarchy ${name}`), name)
   })
 })

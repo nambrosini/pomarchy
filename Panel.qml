@@ -12,7 +12,7 @@ import "Model.js" as Model
 // button to anchor against, and itself as the bar identity.
 Panel {
   id: root
-  moduleName: "nambrosini.pomodoro"
+  moduleName: "nambrosini.pomarchy"
   manageIpc: false
 
   property var anchorItem: null

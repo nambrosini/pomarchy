@@ -335,7 +335,7 @@ function sessionDots(state, config) {
 function tooltip(state, config, now) {
   var dots = sessionDots(state, config)
   if (state.phase === "idle") {
-    return "Pomodoro\nClick to open the timer · " + Math.round(config.workMs / MS_PER_MINUTE) + " min work sessions"
+    return "Pomarchy\nClick to open the timer · " + Math.round(config.workMs / MS_PER_MINUTE) + " min work sessions"
   }
   if (state.phase === "awaiting") {
     var prompt = notification(state, config)
@@ -439,7 +439,7 @@ function notifyCommand(state, config) {
   if (state.phase !== "awaiting" || !config.notify) return []
   var prompt = notification(state, config)
   var actionLabel = "Start " + PHASE_LABELS[state.next]
-  return ["notify-send", "--app-name=Pomodoro", "--urgency=critical", "--print-id",
+  return ["notify-send", "--app-name=Pomarchy", "--urgency=critical", "--print-id",
     "--action=default=" + actionLabel, prompt.summary, prompt.body]
 }
 
@@ -484,7 +484,7 @@ function confirmPending(state, config, now) {
   return state.phase === "awaiting" ? confirm(state, config, now) : state
 }
 
-// Snapshot for `omarchy-shell pomodoro status`, so scripts and other bars can
+// Snapshot for `omarchy-shell pomarchy status`, so scripts and other bars can
 // read the timer without parsing the label.
 function status(state, config, now) {
   return {
@@ -502,9 +502,25 @@ function status(state, config, now) {
 // ---- Persistence. The state file is user state, not cache, so it goes
 //      under XDG_STATE_HOME like Omarchy's own notification history.
 
+function stateBase(env) {
+  return env.XDG_STATE_HOME ? String(env.XDG_STATE_HOME).replace(/\/+$/, "") : env.HOME + "/.local/state"
+}
+
 function stateDir(env) {
-  var base = env.XDG_STATE_HOME ? String(env.XDG_STATE_HOME).replace(/\/+$/, "") : env.HOME + "/.local/state"
-  return base + "/omarchy-pomodoro"
+  return stateBase(env) + "/pomarchy"
+}
+
+// Where the plugin kept its state before it was named Pomarchy.
+function legacyStateDir(env) {
+  return stateBase(env) + "/omarchy-pomodoro"
+}
+
+// Creates the state folder and, for files it doesn't have yet, copies them
+// from the pre-rename folder (left in place, never overwritten).
+function prepareStateDirCommand(dir, legacyDir) {
+  return ["sh", "-c",
+    'mkdir -p "$1" && for f in state.json stats.json; do [ -e "$1/$f" ] || [ ! -e "$2/$f" ] || cp "$2/$f" "$1/$f"; done',
+    "sh", dir, legacyDir]
 }
 
 // The in-memory copy only exists across a hot-reload and is written on every

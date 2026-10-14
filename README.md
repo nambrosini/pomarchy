@@ -1,6 +1,6 @@
-# Pomodoro for Omarchy
+# Pomarchy: a Pomodoro timer for Omarchy
 
-A Pomodoro timer that lives in the Omarchy bar. Work sessions and breaks count down in the bar. When a phase ends you hear a sound and get a notification, and **the next phase only starts once you confirm it**.
+**Pomarchy** is a Pomodoro timer plugin for the [Omarchy](https://omarchy.org) bar (the Quickshell bar on Omarchy's Hyprland desktop). It puts a focus timer in the bar, with a popup for controls and a GitHub-style graph of your Pomodoro sessions. Work sessions and breaks count down in the bar. When a phase ends you hear a sound and get a notification, and **the next phase only starts once you confirm it**.
 
 ```
  Wednesday 15:38  󰔟 24:13      ← work session running
@@ -14,15 +14,23 @@ A Pomodoro timer that lives in the Omarchy bar. Work sessions and breaks count d
 omarchy plugin add <git-url> --enable
 
 # or from a local checkout (development)
-ln -s ~/Projects/omarchy-pomodoro ~/.config/omarchy/plugins/nambrosini.pomodoro
-omarchy plugin enable nambrosini.pomodoro
+ln -s "$PWD" ~/.config/omarchy/plugins/nambrosini.pomarchy   # run inside the checkout
+omarchy plugin enable nambrosini.pomarchy
 ```
 
 Place it in the bar, for example right after the clock:
 
 ```bash
-omarchy bar move nambrosini.pomodoro --after omarchy.clock
+omarchy bar move nambrosini.pomarchy --after omarchy.clock
 ```
+
+### Upgrading from `omarchy-pomodoro`
+
+Pomarchy used to be called `omarchy-pomodoro` (plugin id `nambrosini.pomodoro`). After updating:
+
+- your timer state and stats are copied over from `~/.local/state/omarchy-pomodoro/` on first start; the old folder is left alone and can be deleted afterwards;
+- in `~/.config/omarchy/shell.json`, change the bar entry's `"id"` from `nambrosini.pomodoro` to `nambrosini.pomarchy` (its settings carry over), and enable the new id;
+- keybindings and scripts change from `omarchy-shell pomarchy …` to `omarchy-shell pomarchy …`.
 
 ## Using it
 
@@ -63,16 +71,16 @@ The cycle is work → short break → work … and after every 4th work session 
 - a critical notification appears and stays until you click it ("Work session done / Click to start a 5 min short break"),
 - the bar shows a pulsing bell, `Break?` or `Work?`, in the theme's urgent colour.
 
-The next phase starts only after you click the notification, press play in the popup, or run `omarchy-shell pomodoro confirm`. Confirming one way closes the notification. Do Not Disturb hides the notification, but the bar keeps asking. The timer keeps running while the screen is locked.
+The next phase starts only after you click the notification, press play in the popup, or run `omarchy-shell pomarchy confirm`. Confirming one way closes the notification. Do Not Disturb hides the notification, but the bar keeps asking. The timer keeps running while the screen is locked.
 
 ## Settings
 
 Settings live on the widget's entry in `~/.config/omarchy/shell.json`:
 
 ```bash
-omarchy bar set nambrosini.pomodoro workMinutes 50
-omarchy bar set nambrosini.pomodoro notify false --json
-omarchy bar set nambrosini.pomodoro sound ""          # no sound
+omarchy bar set nambrosini.pomarchy workMinutes 50
+omarchy bar set nambrosini.pomarchy notify false --json
+omarchy bar set nambrosini.pomarchy sound ""          # no sound
 ```
 
 | Key | Default | |
@@ -87,14 +95,14 @@ omarchy bar set nambrosini.pomodoro sound ""          # no sound
 ## Scripts and keybindings
 
 ```bash
-omarchy-shell pomodoro toggle      # start / pause / resume / confirm
-omarchy-shell pomodoro confirm     # start the pending phase (or start work when idle)
-omarchy-shell pomodoro skip      # the popup's Next, except it doesn't start pending work
-omarchy-shell pomodoro back      # restart the phase, or go to the previous one
-omarchy-shell pomodoro stop      # back to idle, keeping cycle progress
-omarchy-shell pomodoro reset     # back to idle, clearing the session count
-omarchy-shell pomodoro adjust 5    # ±minutes on the current phase
-omarchy-shell pomodoro status      # JSON, see below
+omarchy-shell pomarchy toggle      # start / pause / resume / confirm
+omarchy-shell pomarchy confirm     # start the pending phase (or start work when idle)
+omarchy-shell pomarchy skip      # the popup's Next, except it doesn't start pending work
+omarchy-shell pomarchy back      # restart the phase, or go to the previous one
+omarchy-shell pomarchy stop      # back to idle, keeping cycle progress
+omarchy-shell pomarchy reset     # back to idle, clearing the session count
+omarchy-shell pomarchy adjust 5    # ±minutes on the current phase
+omarchy-shell pomarchy status      # JSON, see below
 ```
 
 `status` prints:
@@ -108,19 +116,19 @@ omarchy-shell pomodoro status      # JSON, see below
 Example bindings for `~/.config/hypr/bindings.lua` (`SUPER + ALT + P` is unbound on a stock Omarchy; check with `omarchy menu keybindings --print`):
 
 ```lua
-o.bind("SUPER + ALT + P", "Pomodoro toggle", "omarchy-shell pomodoro toggle")
-o.bind("SUPER + ALT + SHIFT + P", "Pomodoro skip", "omarchy-shell pomodoro skip")
+o.bind("SUPER + ALT + P", "Pomarchy toggle", "omarchy-shell pomarchy toggle")
+o.bind("SUPER + ALT + SHIFT + P", "Pomarchy skip", "omarchy-shell pomarchy skip")
 ```
 
 ## State
 
 The stats live next to the timer in `stats.json` (one total per day, kept indefinitely: about 15 KB a year). It is a separate file so a timer state that has to be reset can never take the history with it. Counting started with the version that added the stats view: earlier days were never stored, so the graph begins then (that day's finished sessions are counted in). If `stats.json` can't be read it is kept as `stats.json.bad-<time>` and a fresh one is started.
 
-The timer, cycle progress and today's finished phases are stored, with the timer as an absolute end time, in `$XDG_STATE_HOME/omarchy-pomodoro/state.json` (by default `~/.local/state/omarchy-pomodoro/state.json`), so it doesn't drift and it survives shell restarts and reboots. A phase that ran out while the shell was down alerts as soon as the shell starts again.
+The timer, cycle progress and today's finished phases are stored, with the timer as an absolute end time, in `$XDG_STATE_HOME/pomarchy/state.json` (by default `~/.local/state/pomarchy/state.json`), so it doesn't drift and it survives shell restarts and reboots. A phase that ran out while the shell was down alerts as soon as the shell starts again.
 
 ## Known limitations
 
-- After a full shell restart while a phase change is pending, the old notification can't confirm anything any more. Use the widget or `omarchy-shell pomodoro confirm`. (A plugin hot-reload replaces the popup with a working one.)
+- After a full shell restart while a phase change is pending, the old notification can't confirm anything any more. Use the widget or `omarchy-shell pomarchy confirm`. (A plugin hot-reload replaces the popup with a working one.)
 - If `pw-play` fails, it fails silently. The urgent bar state is the reliable signal.
 
 ## Development

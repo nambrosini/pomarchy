@@ -17,7 +17,8 @@ const TIMER_KEYS = ["workMinutes", "shortBreakMinutes", "longBreakMinutes", "ses
 describe("manifest", () => {
   test("identifies the plugin", () => {
     assert.equal(manifest.schemaVersion, 1)
-    assert.equal(manifest.id, "nambrosini.pomodoro")
+    assert.equal(manifest.id, "nambrosini.pomarchy")
+    assert.equal(manifest.name, "Pomarchy")
     assert.match(manifest.version, /^\d+\.\d+\.\d+$/)
   })
 

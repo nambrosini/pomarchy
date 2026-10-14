@@ -8,14 +8,14 @@ import qs.Ui
 // holds every control; nothing else on the bar acts on the timer.
 BarWidget {
   id: root
-  moduleName: "nambrosini.pomodoro"
+  moduleName: "nambrosini.pomarchy"
 
   property var service: null
 
   // The service can mount after the widget; look it up until it appears.
   function attachService() {
     var found = root.bar && root.bar.shell && typeof root.bar.shell.serviceFor === "function"
-      ? root.bar.shell.serviceFor("nambrosini.pomodoro") : null
+      ? root.bar.shell.serviceFor("nambrosini.pomarchy") : null
     if (found !== root.service) root.service = found
     if (root.service) root.service.configure(root.settings)
     root.injectPanel()

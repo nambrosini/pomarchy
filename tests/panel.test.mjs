@@ -171,3 +171,26 @@ describe("ContributionGraph", () => {
     assert.match(graph, /"less"[\s\S]*?"more"/)
   })
 })
+
+describe("Pomarchy identity", () => {
+  const widget = read("BarWidget.qml")
+
+  test("every module reference uses the pomarchy id", () => {
+    for (const [name, source] of [["BarWidget", widget], ["Panel", panel], ["Service", service]])
+      assert.doesNotMatch(source, /nambrosini[.-]pomodoro/, name)
+    assert.match(widget, /moduleName:\s*"nambrosini\.pomarchy"/)
+    assert.match(widget, /serviceFor\("nambrosini\.pomarchy"\)/)
+    assert.match(service, /reloadableId:\s*"nambrosini-pomarchy"/)
+  })
+
+  test("the state folder is prepared (and migrated) before the state is read", () => {
+    assert.match(service, /Model\.prepareStateDirCommand\(root\.stateDir, root\.legacyStateDir\)/)
+    assert.match(service, /onExited:\s*{\s*root\.stateDirReady = true\s*stateFile\.reload\(\)/)
+  })
+
+  test("an early read (before the folder is prepared) can't mark the state as loaded", () => {
+    // FileView reads as soon as it has a path; on the first start after the
+    // rename that read failed and the timer started empty (found live).
+    assert.match(service, /function loadState\(fileText\)\s*{[\s\S]*?if \(root\.stateLoaded \|\| !root\.stateDirReady\) return/)
+  })
+})

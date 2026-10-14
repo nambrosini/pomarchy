@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "id": "nambrosini.pomodoro",
-  "name": "Pomodoro",
-  "version": "0.2.0",
+  "id": "nambrosini.pomarchy",
+  "name": "Pomarchy",
+  "version": "0.3.0",
   "author": "nambrosini",
-  "description": "Pomodoro timer in the bar with a player-style popup: work sessions and breaks that wait for your confirmation",
+  "description": "Pomarchy: a Pomodoro timer for the Omarchy bar, with a player-style popup, breaks that wait for your confirmation, and a GitHub-style stats graph",
   "kinds": [
     "service",
     "bar-widget"
@@ -14,7 +14,7 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Pomodoro",
+    "displayName": "Pomarchy",
     "description": "Pomodoro countdown; click to open the timer popup",
     "category": "Time",
     "allowMultiple": false,

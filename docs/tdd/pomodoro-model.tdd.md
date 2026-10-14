@@ -317,3 +317,33 @@ Not verified live (needs a mouse or a focused popup): the stats button and `g`, 
 | 47 | Totals, focus hours, current and longest streak, best day; year paging capped at today with Feb 29 clamped; tiles | stats summary and paging › *, stat tiles › * |
 | 48 | Service: a separate atomic `stats.json`, loaded after the timer state, backed up before being replaced, fed from `apply()`, graph keyed by `todayKey` | panel.test.mjs › Service keeps the stats archive |
 | 49 | Panel: stats button and `g`, the timer default restored on close, stats-only keys, width from the graph, graph/summary/paging from the model, `g` in Shortcuts; ContributionGraph renders the model's weeks, labels, tooltips and legend | panel.test.mjs › Stats view, ContributionGraph |
+
+---
+
+# Phase 8: renamed to Pomarchy
+
+**Change:** the project is now **Pomarchy**. Plugin id `nambrosini.pomodoro` → `nambrosini.pomarchy`, IPC target `pomodoro` → `pomarchy`, state folder `omarchy-pomodoro` → `pomarchy`, notification app name and tooltip → `Pomarchy`, manifest version 0.3.0. Earlier phases above keep the old names, because that is what was run at the time. The word "Pomodoro" stays in the README title and intro and in the manifest descriptions, so searches for "omarchy pomodoro" still find the project.
+
+**Migration:** before the state is read, the service runs `Model.prepareStateDirCommand(dir, legacyDir)`. It creates the new folder and copies `state.json` and `stats.json` from `omarchy-pomodoro/` only when the new folder lacks them. Nothing is overwritten, and the old folder is left in place. The state file is now read when that command exits, replacing the old "mkdir, then read one tick later" race.
+
+## RED / GREEN
+| Stage | Command | Result |
+|---|---|---|
+| RED | `TZ=UTC node --test 'tests/*.test.mjs'` after updating the tests to the new names | 223 tests, 212 pass, 11 fail: IPC target, README commands, manifest id, tooltip, notify app name, state dir ×2, `legacyStateDir`/`prepareStateDirCommand` not functions, old ids in QML, no migration before the read |
+| GREEN | same | 223 tests, 223 pass |
+| Validator / lint | `omarchy plugin validate .`; `qmllint Service.qml` | both exit 0 |
+
+## Added guarantees
+| # | Guarantee | Test |
+|---|---|---|
+| 50 | The manifest id is `nambrosini.pomarchy` and its name `Pomarchy`; the IPC target is `pomarchy`, and the README documents `omarchy-shell pomarchy …` | manifest.test.mjs, ipc.test.mjs |
+| 51 | No QML file still references `nambrosini.pomodoro`/`-pomodoro` | panel.test.mjs › Pomarchy identity |
+| 52 | The new state folder is `…/pomarchy`; state is copied once from `…/omarchy-pomodoro`, never overwriting, before the first read | rename to Pomarchy › *, panel.test.mjs › Pomarchy identity |
+
+## Live check and a race it exposed
+| # | Check | Observed |
+|---|---|---|
+| R1 | Your setup moved: symlink renamed to `nambrosini.pomarchy`, bar entry id changed in `shell.json` (backup kept), shell restarted | `omarchy plugin list`: `nambrosini.pomarchy enabled third-party service,bar-widget Pomarchy`; `omarchy-shell pomarchy status` answers |
+| R2 | First start with no `pomarchy/` folder | Both files were copied, but the timer started **empty** (`completed: 0` while the file said 1). FileView reads as soon as it has a path, before the copy finished; that failed read marked the state as loaded, so the real read was ignored. Before the rename the file always existed, which hid the race. |
+| R3 | Fix: `stateDirReady`, set when the prepare command exits; `loadState` ignores any read before it. RED: 224 tests, 2 fail (the two guards); GREEN: 224 pass | — |
+| R4 | R2 repeated with the new folder moved aside | Copied and loaded: `completed: 1`, stats `{"2026-10-14":{"sessions":1,…}}` |

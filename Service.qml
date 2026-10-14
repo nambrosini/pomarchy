@@ -36,7 +36,7 @@ Item {
   // covers restarts.
   PersistentProperties {
     id: persisted
-    reloadableId: "nambrosini-pomodoro"
+    reloadableId: "nambrosini-pomarchy"
     property string saved: ""
     property int notificationId: 0
     onLoaded: root.reviveNotification()
@@ -44,23 +44,35 @@ Item {
 
   // ---- Persistence
 
-  readonly property string stateDir: Model.stateDir({
+  readonly property var stateEnv: ({
     XDG_STATE_HOME: Quickshell.env("XDG_STATE_HOME"),
     HOME: Quickshell.env("HOME"),
   })
+  readonly property string stateDir: Model.stateDir(stateEnv)
+  readonly property string legacyStateDir: Model.legacyStateDir(stateEnv)
   // Nothing is written until the saved state has been read, so a fresh
   // instance can never clobber a running timer with its initial idle state.
   property bool stateLoaded: false
+  // FileView reads as soon as it has a path, which can be before the folder
+  // exists or the pre-rename state has been copied in; such a read must not
+  // count, or the timer would start empty.
+  property bool stateDirReady: false
   // Settings arrive from the bar widget. Holding the first tick until they
   // do keeps a phase that ended during downtime from alerting with default
   // durations; the fallback below covers a widget that never attaches.
   property bool configured: false
   property bool started: false
 
+  // Read the saved state only once the folder exists and any state from
+  // before the rename has been copied in (a first run lands in onLoadFailed).
   Process {
     id: ensureDirProc
-    command: ["mkdir", "-p", root.stateDir]
+    command: Model.prepareStateDirCommand(root.stateDir, root.legacyStateDir)
     running: false
+    onExited: {
+      root.stateDirReady = true
+      stateFile.reload()
+    }
   }
 
   FileView {
@@ -76,7 +88,7 @@ Item {
 
   function loadState(fileText) {
     // FileView can report a load more than once during startup.
-    if (root.stateLoaded) return
+    if (root.stateLoaded || !root.stateDirReady) return
     root.timerState = Model.restore(Model.pickSaved(persisted.saved, fileText), root.config, Date.now())
     root.stateLoaded = true
     root.startIfReady()
@@ -254,10 +266,10 @@ Item {
     onTriggered: root.tick()
   }
 
-  // `omarchy-shell pomodoro <method>`, for keybindings and scripts. The
+  // `omarchy-shell pomarchy <method>`, for keybindings and scripts. The
   // service is the only instance, so the target is never registered twice.
   IpcHandler {
-    target: "pomodoro"
+    target: "pomarchy"
 
     function toggle(): string { root.toggle(); return "ok" }
     function confirm(): string { root.confirm(); return "ok" }
@@ -274,8 +286,5 @@ Item {
 
   Component.onCompleted: {
     ensureDirProc.running = true
-    // Give mkdir a tick, then read the saved state (an empty read on first
-    // run lands in onLoadFailed).
-    Qt.callLater(function() { stateFile.reload() })
   }
 }
