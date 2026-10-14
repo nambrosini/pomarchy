@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests and coverage
+    runs-on: ubuntu-latest
+    env:
+      # The midnight/history tests compute local dates; UTC keeps them
+      # deterministic (one test switches to Europe/Zurich on purpose).
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Unit + contract tests, failing below 80% coverage of the timer model.
+      # The `omarchy plugin validate` test skips itself: omarchy isn't on the runner.
+      - name: Run tests with coverage gate
+        run: >-
+          node --test
+          --experimental-test-coverage
+          --test-coverage-include='Model.js'
+          --test-coverage-lines=80
+          --test-coverage-branches=80
+          --test-coverage-functions=80
+          'tests/*.test.mjs'
+
+  qml:
+    name: QML lint
+    runs-on: ubuntu-latest
+    # Arch, like Omarchy: same Qt and Quickshell packages the plugin runs on.
+    container: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt and Quickshell
+        run: pacman -Syu --noconfirm --needed qt6-declarative quickshell
+
+      # Fails on syntax and other errors. Warnings (the shell's own qs.*
+      # modules aren't available outside Omarchy) are reported but allowed.
+      - name: qmllint
+        run: |
+          status=0
+          for file in *.qml; do
+            echo "::group::$file"
+            /usr/lib/qt6/bin/qmllint "$file" || status=1
+            echo "::endgroup::"
+          done
+          exit $status
