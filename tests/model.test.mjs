@@ -1321,3 +1321,89 @@ describe("rename to Pomarchy", () => {
     ])
   })
 })
+
+describe("ad-hoc sessions (start N)", () => {
+  const c = cfg()
+  const awaitingShort = () => finishPhase(Model.start(Model.initialState(), c, T0), c, T0)
+  const awaitingLong = () => {
+    const c1 = Model.normalizeConfig({ sessionsBeforeLongBreak: 1 })
+    return finishPhase(Model.start(Model.initialState(), c1, T0), c1, T0)
+  }
+
+  test("from idle starts a work session of the given length", () => {
+    const s = Model.start(Model.initialState(), c, T0, 45)
+    assert.equal(s.phase, "work")
+    assert.equal(s.running, true)
+    assert.equal(s.durationMs, 45 * MIN)
+    assert.equal(Model.remaining(s, T0), 45 * MIN)
+  })
+
+  test("0, or no number, uses the configured work length", () => {
+    assert.equal(Model.start(Model.initialState(), c, T0, 0).durationMs, 25 * MIN)
+    assert.equal(Model.start(Model.initialState(), c, T0).durationMs, 25 * MIN)
+  })
+
+  test("over 180 is clamped; negative or junk falls back to the setting, as normalizeConfig does", () => {
+    assert.equal(Model.start(Model.initialState(), c, T0, 999).durationMs, 180 * MIN)
+    assert.equal(Model.start(Model.initialState(), c, T0, -5).durationMs, 25 * MIN)
+    assert.equal(Model.start(Model.initialState(), c, T0, "abc").durationMs, 25 * MIN)
+  })
+
+  test("while awaiting work it starts work of the given length", () => {
+    let s = Model.confirm(awaitingShort(), c, T0)
+    s = finishPhase(s, c, T0)                 // short break done, next is work
+    assert.equal(s.next, "work")
+    const w = Model.start(s, c, T0 + 40 * MIN, 10)
+    assert.equal(w.phase, "work")
+    assert.equal(w.durationMs, 10 * MIN)
+    assert.equal(w.cycle, 1)
+  })
+
+  test("while awaiting a short break it skips the break, cycle unchanged", () => {
+    const s = Model.start(awaitingShort(), c, T0 + 25 * MIN, 50)
+    assert.equal(s.phase, "work")
+    assert.equal(s.durationMs, 50 * MIN)
+    assert.equal(s.cycle, 1)
+    assert.equal(s.completed, 1)
+  })
+
+  test("while awaiting a long break it skips the break and closes the cycle", () => {
+    const s = Model.start(awaitingLong(), c, T0 + 25 * MIN, 50)
+    assert.equal(s.phase, "work")
+    assert.equal(s.cycle, 0)
+  })
+
+  test("while running or paused it returns the same state object", () => {
+    const running = Model.start(Model.initialState(), c, T0)
+    assert.equal(Model.start(running, c, T0 + MIN, 10), running)
+    const paused = Model.pause(running, T0 + MIN)
+    assert.equal(Model.start(paused, c, T0 + 2 * MIN, 10), paused)
+  })
+
+  test("a finished custom session counts in stats with its own length", () => {
+    const running = Model.start(Model.initialState(), c, at("2026-10-14", 9), 45)
+    const done = Model.tick(running, c, at("2026-10-14", 10))
+    assert.equal(done.completed, 1)
+    assert.equal(done.next, "short")
+    assert.deepEqual(plain(Model.statsDelta(running, done, at("2026-10-14", 10))),
+      [{ day: "2026-10-14", sessions: 1, focusMs: 45 * MIN }])
+  })
+
+  test("back after the grace period restarts at the custom length", () => {
+    const s = Model.back(Model.start(Model.initialState(), c, T0, 45), c, T0 + 10 * MIN)
+    assert.equal(s.phase, "work")
+    assert.equal(s.durationMs, 45 * MIN)
+    assert.equal(Model.remaining(s, T0 + 10 * MIN), 45 * MIN)
+  })
+
+  test("back within the grace period of the first session keeps the custom length", () => {
+    const s = Model.back(Model.start(Model.initialState(), c, T0, 45), c, T0 + 2 * SEC)
+    assert.equal(s.durationMs, 45 * MIN)
+  })
+
+  test("back keeps an adjusted length too", () => {
+    const adjusted = Model.adjust(Model.start(Model.initialState(), c, T0), T0 + 10 * MIN, 5)
+    const s = Model.back(adjusted, c, T0 + 10 * MIN)
+    assert.equal(s.durationMs, 30 * MIN)
+  })
+})

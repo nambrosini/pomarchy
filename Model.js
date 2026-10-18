@@ -80,11 +80,11 @@ function durationFor(phase, config) {
   return config.workMs
 }
 
-function begin(state, phase, config, now) {
+function begin(state, phase, config, now, durationMs) {
   var s = copy(state)
   s.phase = phase
   s.running = true
-  s.durationMs = durationFor(phase, config)
+  s.durationMs = durationMs > 0 ? durationMs : durationFor(phase, config)
   s.startedAt = now
   s.endsAt = now + s.durationMs
   s.remainingMs = 0
@@ -131,8 +131,15 @@ function pruneHistory(history, now) {
   return kept.slice(Math.max(0, kept.length - MAX_HISTORY))
 }
 
-function start(state, config, now) {
-  return state.phase === "idle" ? begin(state, "work", config, now) : state
+// A one-off work session of `minutes` (0 or missing: the setting), for
+// scripts. From a pending break it skips the break, as skip does. While a
+// phase runs or is paused it returns the same state, so callers can tell.
+function start(state, config, now, minutes) {
+  var awaiting = state.phase === "awaiting"
+  if (state.phase !== "idle" && !awaiting) return state
+  var s = begin(state, "work", config, now, positiveNumber(minutes, 0, MAX_MINUTES) * MS_PER_MINUTE)
+  if (awaiting && state.next === "long") s.cycle = 0
+  return s
 }
 
 function confirm(state, config, now) {
@@ -225,16 +232,17 @@ function replay(state, phase, config, now) {
   return s
 }
 
-// Music-player back: restart the phase once it is under way, otherwise go
-// to the previous one. The phase before a work session is the break that
+// Music-player back: restart the phase once it is under way (at its current
+// length, so a custom or adjusted session keeps it), otherwise go to the
+// previous one. The phase before a work session is the break that
 // led into it; before a break (or while awaiting) it is the phase that
 // just ended.
 function back(state, config, now) {
   if (state.phase === "idle") return state
   if (isTimed(state.phase) && state.durationMs - remaining(state, now) > BACK_GRACE_MS)
-    return begin(state, state.phase, config, now)
+    return begin(state, state.phase, config, now, state.durationMs)
   if (state.phase === "work") {
-    if (state.completed === 0) return begin(state, "work", config, now)
+    if (state.completed === 0) return begin(state, "work", config, now, state.durationMs)
     return replay(state, state.cycle === 0 ? "long" : "short", config, now)
   }
   if (state.phase === "awaiting") {

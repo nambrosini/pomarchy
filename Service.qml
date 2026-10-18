@@ -256,6 +256,13 @@ Item {
   function stop() { root.now = Date.now(); root.apply(Model.stop(root.timerState)) }
   function reset() { root.now = Date.now(); root.apply(Model.reset()) }
   function adjust(deltaMinutes) { root.now = Date.now(); root.apply(Model.adjust(root.timerState, root.now, deltaMinutes)) }
+  function start(minutes) {
+    root.now = Date.now()
+    var next = Model.start(root.timerState, root.config, root.now, minutes)
+    if (next === root.timerState) return "busy"
+    root.apply(next)
+    return "ok"
+  }
 
   // Half-second ticks keep the seconds digit from visibly skipping; the
   // countdown itself is computed from endsAt, so tick timing never drifts it.
@@ -278,6 +285,7 @@ Item {
     function stop(): string { root.stop(); return "ok" }
     function reset(): string { root.reset(); return "ok" }
     function adjust(minutes: int): string { root.adjust(minutes); return "ok" }
+    function start(minutes: int): string { return root.start(minutes) }
     function status(): string {
       root.now = Date.now()
       return JSON.stringify(Model.status(root.timerState, root.config, root.now))
