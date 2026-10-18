@@ -36,5 +36,16 @@
 | 9 | Back keeps a custom or adjusted length | ad-hoc sessions › back … | unit |
 | 10 | IPC exposes `start(minutes: int): string` and the README documents it | IPC › exposes start, start takes typed…, README documents every command | contract |
 
+## Live check (2026-10-18)
+The `Service.start` busy/ok wiring and the IPC call can't run under node, so they were checked by hand in the running shell after `omarchy restart shell`, starting from idle:
+
+| Command | Result |
+|---|---|
+| `omarchy-shell pomarchy start 2` | `ok`; `status` shows `phase: work`, `remainingMs: 119937` |
+| `omarchy-shell pomarchy start 5` (while running) | `busy`; the running session is unchanged (`remainingMs: 119872`) |
+| `start 2`, wait 7 s, `back` | restarts work at `02:00`, not the configured 25 min |
+
+Afterwards the timer was stopped and returned to idle with its cycle progress kept.
+
 ## Known gaps
-- The `Service.start` busy/ok wiring and the live IPC call can't run under node. Check them by hand: `omarchy restart shell`, then `omarchy-shell pomarchy start 2` and `status` (remainingMs ≈ 120000), then `start 5` → `busy`.
+- None from the plan.
